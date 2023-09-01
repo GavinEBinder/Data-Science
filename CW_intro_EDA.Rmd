@@ -1,0 +1,204 @@
+---
+title: "EDA: Exploratory Data Analysis"
+output: html_notebook
+---
+
+# Motivation
+
+We are interested in using visualization and data transformation tools to explore  data in a systematic way, a task that statisticians call _exploratory data analysis_, or EDA for short. 
+
+- Generate questions about your data.
+
+- Search for answers by visualizing, transforming, and modelling your data.
+
+- Use what you learn to refine your questions and/or generate new questions.
+
+```{r}
+library(tidyverse)
+```
+
+## EDA 
+
+_EDA is an important part of any data analysis, even if the questions are handed to you on a platter, because you always need to investigate the quality of your data._
+
+
+_"Far better an approximate answer to the right question, which is often vague, than an exact answer to the wrong question, which can always be made precise."_ - John Tukey
+
+
+# Some Definitions
+
+- A **variable** is a quantity, quality, or property that you can measure.
+
+- A **value** is the state of a variable when you measure it. 
+
+
+- An **observation** is a _set of measurements_ made under similar conditions. An observation will contain several values, each associated with a different variable. 
+
+
+- **Tabular data** is a set of values, each associated with a variable and an observation. 
+
+
+- Tabular data is **tidy** if each value is placed in its own "cell", each variable in its own column, and each observation in its own row.
+
+
+# Exploring Variation
+
+- **Variation** is the tendency of the values of a variable to change from measurement to measurement. Each of your measurements will include a small amount of error that varies from measurement to measurement. 
+
+
+- _Categorical variables_ can also vary if you measure across different subjects (e.g. the eye colors of different people), or different times (e.g. the energy levels of an electron at different moments). 
+
+
+
+- Every variable has its own _pattern of variation_, which can reveal interesting information. 
+
+
+
+# Distributions of Categorical Variable 
+
+A variable is **categorical** if it can only take one of a small set of values. To examine the distribution of a categorical variable, use a **bar chart**:
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_bar(aes(x = cut))
+```
+
+
+# Distributions of Categorical Variable
+
+The height of the bars displays how many observations occurred with each `x` value. You can compute these values manually with `dplyr::count()`:
+
+
+```{r}
+diamonds %>%
+  count(cut)
+```
+
+
+# Distributions of Continuous Variable 
+
+
+A variable is **continuous** if it can take any of an _infinite set of ordered values_. To examine the distribution of a continuous variable, use a **histogram**: this divides the x-axis into _equally spaced bins_ and then uses the height of a bar to display the number of observations that fall in each bin. 
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(aes(x = carat), binwidth = 0.5)
+```
+
+
+
+# Typical values
+
+- Which values are the _most common_? Why?
+
+- Which values are _rare_? Why? Does that match your expectations?
+
+- Can you see any _unusual patterns_? What might explain them?
+
+
+- How are the observations within each cluster similar to each other?
+
+- How are the observations in separate clusters different from each other?
+
+- How can you explain or describe the _clusters_?
+
+- Why might the _appearance_ of clusters be misleading?
+
+
+# Missing values 
+
+If you have encountered unusual values in your dataset, and simply want to move on to the rest of your analysis, the following are some options:
+
+
+1. Drop the entire row with the strange values
+
+2. Replace the unusual values with missing values. 
+
+
+
+```{r}
+diamonds %>% 
+  mutate(y = ifelse(y< 3 | y >20, NA, y))
+```
+
+
+
+`ifelse()` has three arguments. The first argument test should be a logical vector. The result will contain the value of the second argument, `yes`, when test is `TRUE`, and the value of the third argument, `no`, when it is `FALSE`.
+
+
+
+# Exploring Covariation
+
+If variation describes the behavior within a variable, _covariation describes the behavior between variables_. 
+
+**Covariation** is the tendency for the values of two or more variables to vary together in a related way. 
+
+The best way to spot covariation is to visualize the relationship between two or more variables. 
+
+
+How you do that should again depend on the type of variables involved.
+
+
+
+# Continuous vs Categorical
+
+A way to display the distribution of a continuous variable broken down by a categorical variable is the **boxplot**. Each boxplot consists of:
+
+
+1. A box that stretches from the _25th percentile_ of the distribution to the _75th percentile_, a distance known as the interquartile range (IQR). In the middle of the box is a line that displays the _median_ 
+
+2. Points that fall more than 1.5 times the IQR from either edge of the box. 
+
+3. A line (or _whisker_) that extends from each end of the box and goes to the farthest non-outlier point in the distribution.
+
+
+
+# Boxplots
+
+```{r, out.width = "100%", fig.align='center', echo=FALSE}
+knitr::include_graphics("http://r4ds.had.co.nz/images/EDA-boxplot.png")
+```
+
+
+# Boxplot Example 
+
+
+Take the `class` variable in the `mpg` dataset. You might be interested to know how highway mileage varies across classes:
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_boxplot(aes(x = class, y = hwy))
+```
+A little bit of extra exploration:
+
+```{r}
+mpg %>%
+  filter(class == "suv", hwy > 20)
+```
+
+
+
+
+# Categorical vs Categorical 
+
+
+Count the number of observations for each combination. One way to do that is to rely on the built-in `geom_count()`
+
+
+```{r}
+
+```
+
+
+# Continuous vs Continuous  
+
+The covariation between two continuous variables can be explored drawing a _scatterplot_ with `geom_point()`. 
+
+
+```{r}
+
+```
+
+

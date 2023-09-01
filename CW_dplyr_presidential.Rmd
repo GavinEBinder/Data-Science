@@ -1,0 +1,124 @@
+---
+title: "Analyzing the Presidential Elections"
+output: html_notebook
+---
+
+Adapted from _"Programming Skills for Data Science: Start Writing Code to Wrangle, Analyze, and Visualize Data with R, First Edition."_ by Freeman and Ross.
+
+Load the `tidyverse`
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+Loading the presidential dataset into `presidentialElections` variable:
+
+```{r}
+# read data
+presidentialElections <- read_csv("https://raw.githubusercontent.com/reisanar/datasets/master/presidentialElections.csv")
+```
+
+
+Select `year` and `demVotes` (percentage of vote won by the Democrat) from the `presidentialElections` data frame.
+
+```{r}
+votes <- presidentialElections %>%
+  select(year, demVote)
+votes
+```
+
+Select columns `state` through `year` (i.e., `state`, `demVote`, and `year`)
+
+```{r}
+presidentialElections %>%
+  select(state:year)
+```
+
+Select all columns except for `south`
+
+```{r}
+presidentialElections %>%
+  select(-south)
+```
+
+
+Select all rows from the 2008 election
+
+```{r}
+votes_2008 <- presidentialElections %>%
+  filter(year == 2008)
+votes_2008
+```
+
+
+Extract the row(s) for the state of Colorado in 2008
+
+```{r}
+votes_colorado_2008 <- presidentialElections %>%
+  filter(year == 2008, state == "Colorado")
+votes_colorado_2008
+```
+
+Add an `other_parties_vote` column that is the percentage of votes for other parties. Also add an `abs_vote_difference` column of the absolute difference between percentages. Note you can use columns as you create them!
+
+```{r}
+presidentialElections <- presidentialElections %>%
+  mutate(
+    other_parties_vote = 100 - demVote,
+    abs_vote_difference = abs(demVote - other_parties_vote)
+  )
+presidentialElections
+  
+```
+
+Arrange rows in decreasing order by `year`, then by `demVote` within each `year`
+
+```{r}
+presidentialElections <- presidentialElections %>%
+                          arrange(desc(year), demVote)
+presidentialElections
+```
+
+Compute summary statistics for the `presidentialElections` data frame
+
+```{r}
+average_votes <- presidentialElections %>%
+  summarize(
+    mean_dem_vote = mean(demVote),
+    mean_other_parties = mean(other_parties_vote)
+  )
+average_votes
+  
+```
+
+
+## Additional Analysis
+
+_Which state had the highest percentage of votes for the Democratic Party candidate (Barack Obama) in 2008?_
+
+Answering this seemingly simple question requires a few steps:
+
+1. Filter down the data set to only observations from 2008.
+
+2. Of the percentages in 2008, filter down to the one with the highest percentage of votes for a Democrat.
+
+3. Select the name of the state that meets the above criteria.
+
+
+
+Use the pipe operator to connect multiple instructions:
+
+
+```{r}
+presidentialElections %>%
+  filter(year == 2008) %>%
+  filter(demVote == max(demVote)) %>%
+  select(state)
+
+
+```
+
+
+Compute summary statistics by state: average percentages across the years
+
+

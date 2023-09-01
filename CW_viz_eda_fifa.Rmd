@@ -1,0 +1,161 @@
+---
+title: "EDA practice (FIFA)"
+output: html_notebook
+---
+
+In this example we will do some _Exploratory Data Analysis_ (EDA) using data on players from the 2010 World Cup
+
+The data frame contains 595 observations on the following variables:
+
+Variable      | Description
+--------------|------------------------
+`Player`      | Player's last name
+`Team`        | Country
+`Position`    | a factor (levels: `Defender`, `Forward`, `Goalkeeper`, `Midfielder`)
+`Time`        | Time played in minutes
+`Shots`       | Number of shots attempted
+`Passes`      | Number of passes made
+`Tackles`     | Number of tackles made
+`Saves`       | Number of saves made
+
+
+1. Load the `tidyverse` package
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+2. Get the data:
+
+```{r, message=FALSE}
+fifa_link <- "https://raw.githubusercontent.com/reisanar/datasets/master/worldcup.csv"
+fifa10 <- read_csv(fifa_link)
+```
+
+3. Learn about the nature of the data
+
+```{r}
+glimpse(fifa10)
+```
+
+
+**Challenge**
+
+- Use the `filter()` function to find the names of at least 3 players from Spain's national team during the 2010 world cup.
+
+```{r}
+fifa10 %>%
+  filter(Team == "Spain")
+```
+
+
+
+## Boxplot 
+
+4. We can create a boxplot that shows the relationship between the number of `Passes` by a player (vertical axis) based on his `Position` in the field (horizontal axis).
+
+```{r}
+ggplot(data = fifa10) +
+  geom_boxplot(aes(x = Position, y = Passes))
+
+```
+
+
+**Challenge**
+
+- What do you notice from the above boxplots? 
+
+- Can you create a boxplot that shows the relationship between the number of `Shots` by a player (vertical axis) based on his `Position` in the field (horizontal axis).
+
+```{r}
+ggplot(data = fifa10) +
+  geom_boxplot(aes(x = Position, y = Shots))
+```
+
+
+- What do you notice?
+
+Wgat about the GK?:
+
+```{r}
+fifa10 %>%
+  filter(Position == "Goalkeeper", Shots > 0)
+```
+
+
+
+## Scatterplot
+
+5. To understand the relationship between the number of passes and the number of tackles, let us use a _scatter plot_ with `Tackles` in the horizontal axis, and `Passes` in the vertical axis. Color the points by `Position`
+
+```{r}
+ggplot(data = fifa10)+
+  geom_point(aes(x = Tackles, y = Passes, color = Position))
+
+```
+
+**Challenge**
+
+- Do you notice anything in particular about those players in `Goalkeeper` and `Forward` positions?
+
+Yes, we did. Mostly zero tackles for players in those positions.
+
+```{r}
+fifa10 %>%
+  filter(Passes > 400, Position == "Midfielder")
+```
+
+
+
+
+6. We can also check the relationship between the number of minutes played in the tournament (in the horizontal axis) and the number of passes completed by the player (in the vertical axis). Color the points by `Position`
+
+```{r}
+ggplot(data = fifa10) +
+  geom_point(aes(x = Time, y = Passes, color = Position))
+
+```
+
+**Challenge**
+
+- Do you notice any particular _structure/pattern_ in the graph above? 
+
+Accumulation of points in certain values of time, probably explained by teams making progress towards the final stages of the tournament.
+
+7. We can even add the variable `Shots` to the previous plot and plot the points based on the number of shots per player. Use the option `size=Shots` in the aesthetics. 
+
+```{r}
+ggplot(data = fifa10) +
+  geom_point(aes(x = Time, y = Passes, color = Position, size = Shots))
+
+```
+
+**Challenge**
+
+- Can you find the name of any _outstanding_ players based on the graph above? 
+
+```{r}
+ggplot(data = fifa10) +
+  geom_point(aes(x = Time, y = Passes,
+                 color = Position, size = Shots),
+             alpha = 0.4)
+```
+
+Who was the player that had more than 500 passes?
+
+```{r}
+fifa10 %>%
+  filter(Passes > 500)
+```
+
+
+
+
+
+
+
+
+
+
+
+

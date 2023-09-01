@@ -1,0 +1,177 @@
+---
+title: "Reshaping Data with `tidyr`"
+output: html_notebook
+---
+
+Material adapted from _"Programming Skills for Data Science"_ (PSDS) by Freeman and Ross.
+
+Load the required packages 
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## Data 
+
+The data in this example was downloaded from the [World Bank Data Explorer](https://data.worldbank.org/), which is a data collection of hundreds of indicators (measures) of different economic and social development factors. 
+
+This example considers _educational indicators_ that capture a relevant signal of a country's level of (or investment in) education, such as government expenditure on education, literacy rates, school enrollment rates, and others. The file used in this example has several imperfections: unnecessary rows at the top of the `.csv` file, a lot of missing data (`NA`), long column names. All of theses are representative challenges involved in working with real datasets.
+
+```{r}
+# read the data 
+wb_data <- read.csv("https://github.com/reisanar/datasets/blob/master/world_bank_data.csv?raw=true",
+                    skip = 4, stringsAsFactors = F)
+```
+
+
+- Each observation (row) represents an indicator for a country, with features (columns) that are values of the indicator in a given year
+
+```{r}
+head(wb_data)
+```
+
+Notice the names assign to the different columns.
+Notice the last two columns! 
+Notice the many missing values `NA`s in this dataframe.
+
+
+In terms of the indicator this data is in _long format_. However, in terms in terms of the indicator and year, the data is in _wide format_ since a single column contains all the values for a single year. This structure allows you to make comparisons between years for the indicators by filtering for the indicator of interest:
+
+```{r}
+indicator <- "Government expenditure on education, total (% of GDP)"
+```
+
+Calculate change between 2014 and 1990:
+```{r}
+wb_data %>%
+  filter(Indicator.Name == indicator) %>%
+  filter(!is.na(X1990) & !is.na(X2014)) %>%
+  select(Country.Name, X1990, X2014) %>%
+  mutate(Delta = X2014 - X1990)
+```
+
+Visualize this 
+
+```{r}
+wb_data %>%
+  filter(Indicator.Name == indicator) %>%
+  ggplot() +
+  geom_text(aes(x = X1990, y = X2014, label = Country.Code)) +
+  labs(title = indicator, x = "Expenditure 1990", y = "Expenditure 2014")
+```
+
+Notice: countries that spent more in 1990 also spent more in 2014. 
+
+## Tidy Data: `gather()`
+
+To extend our analysis to visually compare how the expenditure across _all_ years varies for a given country, we would need to reshape this dataframe. 
+
+We want each observation to be an indicator for a country for a year, making the data in _long(er) format_
+
+```{r}
+# test first 
+wb_data %>%
+  pivot_longer(
+    names_to = "year",
+    values_to = "record",
+    cols = X1960:X
+  )
+```
+
+
+Let us save this long data in a new dataframe:
+
+```{r}
+long_year_data <- wb_data %>%
+  pivot_longer(
+    names_to = "year",
+    values_to = "record",
+    cols = X1960:X
+  )
+```
+
+
+This new structure will now allow us to compare fluctuations in a indicator's value over time
+
+```{r}
+#indicator <- "Government expenditure on education, total (% of GDP)"
+# filter data for Spain
+long_year_data %>%
+  filter(Indicator.Name == indicator, Country.Code == "ESP") %>%
+  separate(year, sep =1, into = c("extra", "year"), convert = T) %>%
+  select(Country.Name, Indicator.Name, year, record)
+```
+
+We can use the collection of instructions above to create a visualization for the selected country:
+
+```{r}
+long_year_data %>%
+  filter(Indicator.Name == indicator, Country.Code == "ESP") %>%
+  separate(year, sep = 1, into = c("extra", "year"), convert = T) %>%
+  select(Country.Name, Indicator.Name, year, record) %>%
+  ggplot() +
+  geom_line(aes(x = year, y = record)) +
+  labs(x = "Year", y = "Percent of GDP Expenditure",
+       title = paste(indicator, " in Spain"))
+  
+```
+
+Notice that this plot produces a more complete picture of the history of this educational investment, and draws attention to major changes as well as the absence of data in particular years.
+
+
+## Tidy data: `spread()`
+
+Suppose that you now want to compare two indicators, checking the relationship between each country's literacy rate (indicator 1), and its unemployment rate (indicator 2). For this, we would need to reshape the data again so that each observation is a particular country and each column is an indicator
+
+```{r}
+wide_data <- long_year_data %>%
+  select(-Indicator.Code) %>%
+  pivot_wider(
+    names_from = Indicator.Name,
+    values_from = record,
+  )
+  
+  
+```
+
+This wide format data shape allows for comparisons between two different indicators. For example:
+
+```{r}
+ind_1 <- "Literacy rate, adult female (% of females ages 15 and above)"
+ind_2 <- "Unemployment, female (% of female labor force) (modeled ILO estimate)"
+```
+
+Check these indicators are part of the columns of `wide_data`
+
+```{r}
+ind_1 %in% colnames(wide_data)
+ind_2 %in% colnames(wide_data)
+"not an indicator" %in% colnames(wide_data)
+```
+
+Get the indicators of interest for the year 2014
+
+```{r}
+wide_data %>%
+  mutate(lit_percent_2014 = wide_data[ , ind_1] / 100,
+         employ_percent_2014 = wide_data[ , ind_2] / 100) %>%
+  filter(year == "X2014") 
+```
+
+
+Create a data visualization:
+
+```{r}
+wide_data %>%
+  mutate(lit_percent_2014 = wide_data[[ind_1]]/100, 
+         employment_percent_2014 = wide_data[[ind_2]]/100) %>%
+  filter(year == "X2014") %>%
+  ggplot() +
+  geom_point(aes(x = lit_percent_2014, y = employment_percent_2014))  +
+  labs(x = ind_1, y = "Unemployment, female (% of female labor force)",
+       title = "Female literacy rate versus unemployment (2014)")
+```
+
+> Each comparison in this analysis - between two time points, over a full time series, and between indicators - required a different representation of the data set.
+
+

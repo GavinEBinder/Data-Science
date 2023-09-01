@@ -1,0 +1,172 @@
+---
+title: "Tidy up your data " 
+author: "Data Science Student"
+output: html_notebook
+---
+
+For this assignment you will be using the `gather()`, `spread()`, and `separate()` functions (along with function from `dplyr`) to _tidy up_ some data sets
+
+
+## Problem 1
+
+
+1. Load the `tidyverse` package
+
+```{r}
+library(tidyverse)
+```
+
+2. Consider the following data frame
+
+```{r}
+nba <- data.frame(
+  player = c("James", "Durant", "Curry", "Harden", "Paul", "Irving"),
+  team = c("CLEOH", "OAKCA", "OAKCA", "HOUTX", "HOUTX", "BOSMA"),
+  day1points = c(25,23,30,41,26,20),
+  day2points = c(24,25,33,45,26,23), row.names = NULL, stringsAsFactors = FALSE
+)
+nba
+```
+
+
+3. Use `gather()` to create a data frame with columns `day` and `points`
+
+```{r}
+
+```
+
+
+4. Use `separate()` to create two columns: one for the "city" and the other for the "state" from the column "team". Set the `sep` option to 3. 
+
+```{r}
+
+```
+
+
+5. Taking into account what you did in the previous exercises, use the right commands to _tidy up_ your dataset by creating 5 columns: "player", "team", "state", "day" and "points". 
+
+```{r}
+
+```
+
+
+- Plot your dataset by creating a _scatterplot_ with `day` in the x-axis and `points` in the y-axis. Use `aes(color = city, shape = player)` as aesthetics.
+
+```{r}
+nba_tidy
+```
+```{r}
+
+```
+
+
+
+
+## Problem 2
+
+1. Load the `tidyverse` package
+
+```{r}
+library(tidyverse)
+```
+
+
+2. Read the `grades204.csv` data set
+
+```{r}
+link <- "https://raw.githubusercontent.com/reisanar/datasets/master/grades204.csv"
+mygrades <- read_csv(link)
+```
+
+3. Print the data set: it includes grades for 4 different quizzes, 4 exams, 3 HW assignments, and one final test
+
+```{r}
+mygrades
+```
+
+4. Separate the `name` column into `firstName` and `lastName`
+
+```{r}
+
+```
+
+5. Create a column `username` separating the email handle from its domain
+
+```{r}
+
+```
+
+6. The following code creates a column `ave.quiz` with the average quiz score for every entry:
+
+```{r}
+
+```
+
+- Use the code above to create a column `ave.exam` in a similar way
+
+```{r}
+
+```
+
+- Use the code above to create a column `ave.HW` in a similar way
+
+```{r}
+
+```
+
+
+7. The following code shows an alternative procedure to compute the averages of quizzes, exams and assignments. Notice the use of the function `rowMeans()`
+
+```{r}
+
+```
+
+- Using the example above, create a column called `total` that computes the total score based on the following point-breakdown:
+
+20% Quizzes Average
+15% HW Average
+15% Final exam
+50% Exams average
+
+```{r}
+
+```
+
+Save this data frame into an object with the name `allgrades`
+
+```{r}
+
+```
+
+8. Write a conditional statement that returns the following point breakdown letter grade:
+
+Letter grade  | Total   
+--------------|---------
+A             | 90 - 100
+B             | 80 - 89
+C             | 67 - 79
+D             | 60 - 66
+F             | 0 - 59
+
+```{r}
+
+```
+
+9. Use the conditional statement from the previous exercise to write a _function_ called `fgrade` that returns the letter grade (as defined before) based on the input score `total`
+
+```{r}
+
+```
+
+Test your function with the scores 94, 85.3, and 57.3
+
+```{r}
+
+```
+
+10. Use your function `fgrade` to add a final column to the data frame `allgrades`, with the final letter grade in each case. One way to do this is using the `map_chr()` function 
+
+```{r}
+
+```
+

@@ -1,0 +1,134 @@
+---
+title: "`dplyr` in Action: Analyzing Flight Data"
+output: html_notebook
+---
+
+_Adapted from the PSDS textbook. Chapter 11_
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+The `nycflights13` packages contains several dataframes that can be used together"
+
+![](https://d33wubrfki0l68.cloudfront.net/245292d1ea724f6c3fd8a92063dcd7bfb9758d02/5751b/diagrams/relational-nycflights.png)
+
+Check the number of rows/columns in the `flights` dataframe
+```{r}
+flights
+```
+
+Inspect the column names
+```{r}
+colnames(flights)
+```
+
+Look at the data frame in the RStudio Viewer
+```{r}
+view(airports)
+```
+
+
+1. Which airline has the highest number of delayed departures?
+
+Identify the airline (`carrier`) that has the highest number of delayed flights
+
+```{r}
+has_most_delays <- flights %>%
+  group_by(carrier) %>%
+  filter(dep_delay > 0) %>%
+  summarize(num_delay = n()) %>%
+  filter(num_delay == max(num_delay)) %>%
+  select(carrier)
+  
+  
+```
+
+
+Instead of the airline code, now getting the airline name:
+
+Get name of the most delayed carrier (use `left_join()` with the `airlines` data frame to get the name of the airline)
+
+```{r}
+most_delayed_name <- has_most_delays %>%
+  left_join(airlines, by = "carrier") %>%
+  select(name)
+print(most_delayed_name$name)
+  
+  
+```
+
+
+2. On average, to which airport do flights arrive most early?
+
+Calculate the average arrival delay (`arr_delay`) for each destination (`dest`):
+
+```{r}
+most_early <- flights %>%
+  group_by(dest) %>%
+  summarise(delay = mean(arr_delay))
+  
+```
+
+Compute the average delay by destination airport, omitting NA results
+
+```{r}
+most_early <- flights %>%
+  group_by(dest) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE))
+  
+  
+```
+
+Identify the destination where flights, on average, arrive most early (use a `left_join()` with the the `airports` dataframe to identify the name of the destination)
+
+```{r}
+most_early <- flights %>%
+  group_by(dest) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  filter(delay == min(delay, na.rm = TRUE)) %>%
+  select(dest, delay) %>%
+  left_join(airports, by = c("dest" = "faa")) %>%
+  select(dest, name, delay)
+
+print(most_early)
+  
+  
+```
+
+
+3. In which month do flights tend to have the longest delays?
+
+Identify the month in which flights tend to have the longest delays
+```{r}
+flights %>%
+  group_by(month) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  filter(delay == max(delay)) %>%
+  select(month) %>%
+  print()
+```
+
+Compute delay by month, adding month names for visual display
+
+```{r}
+delay_by_month <- flights %>%
+  group_by(month) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  select(delay) %>%
+  mutate(month = month.name)
+```
+
+4. Create a relevant plot using the `ggplot2` package (for example, show the average delay, in minutes, by month)
+
+```{r}
+ggplot(data = delay_by_month) +
+  geom_point(aes(x = delay, y = month), color = "blue", size = 3) +
+  labs(title = "Average delay by month", x = "Delay (in minutes)", y = "") +
+  scale_y_discrete(limits = rev(month.name)) +
+  xlim(c(-20, 20)) +
+  geom_vline(xintercept = 0, size = 0.25)
+```
+

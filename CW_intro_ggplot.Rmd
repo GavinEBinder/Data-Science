@@ -1,0 +1,292 @@
+---
+title: "Getting Familiar with `ggplot2`"
+output: html_notebook
+---
+
+
+
+# **G**rammar of **G**raphics with **`gg`**`plot2`
+
+```{r, out.width = '100%', fig.align='center', echo = F}
+knitr::include_graphics("https://raw.githubusercontent.com/reisanar/figs/master/ggplot_logo.png")
+```
+
+
+
+# Data Visualization
+
+
+
+We will learn how to visualize data using the **`ggplot2`** package: one of the most elegant and most versatile systems for creating graphs.
+
+`ggplot2` implements the **grammar of graphics**, a coherent system for describing and building graphs. 
+
+
+
+
+> - Do cars with big engines use more fuel than cars with small engines?
+
+> - What does the relationship between engine size and fuel efficiency look like? 
+
+> - Is it positive? Negative? Linear? Nonlinear?
+
+
+# `mpg` dataset
+
+
+A **data frame** is a rectangular collection of variables (in the columns) and observations (in the rows). `mpg` contains observations collected by the US Environment Protection Agency on 38 models of car.
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+Print the `mpg` dataframe:
+
+```{r}
+print(mpg)
+```
+
+
+# Relationship of `displ` and `hwy`
+
+Among the variables in `mpg` are:
+
+- `displ`, a car's engine size, in liters.
+
+- `hwy`, a car's fuel efficiency on the highway, in miles per gallon (mpg). 
+
+
+A car with a low fuel efficiency consumes more fuel than a car with a high fuel efficiency when they travel the same distance.
+
+
+
+
+# A first plot
+
+
+A car with a low fuel efficiency consumes more fuel than a car with a high fuel efficiency when they travel the same distance.
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x=displ,
+                           y=hwy))
+```
+
+The plot shows a _negative relationship_ between engine size (`displ`) and fuel efficiency (`hwy`). In other words, cars with big engines use more fuel.
+
+
+
+# Deconstructing the plot
+
+
+With `ggplot2`, you begin a plot with the function `ggplot()`. 
+
+* `ggplot()` creates a _coordinate system_ that you can add _layers_ to. 
+
+* The first argument of `ggplot()` is the _dataset_ to use in the graph. So `ggplot(data = mpg)` creates an empty graph.
+
+* You complete your graph by adding one or more _layers_ to `ggplot()`. The function `geom_point()` adds a layer of points to your plot, which creates a **scatterplot**.
+
+
+---
+
+
+# Mapping data to aesthetics
+
+
+>  An **aesthetic** is a visual property of the objects in your plot. Aesthetics include things like the size, the shape, or the color of your points. You can display a point in different ways by changing the values of its aesthetic properties.
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ,
+                           y = hwy,
+                           color = class))
+```
+
+
+
+# Grammar of Graphics
+
+`ggplot2` implements the **grammar of graphics**, a coherent system for describing and building graphs. The code you write specifies the **connections** between the variables in your data, and the colors, points, and shapes you see on the screen.
+
+- In `ggplot2`, these logical connections between your data and the plot elements are called _aesthetic mappings_ or just **aesthetics**.
+
+- You begin every plot by telling the `ggplot()` function what your data is, and then how the variables in this data _logically map_ onto the plot's aesthetics. 
+
+
+# geoms
+
+
+Deciding what sort of plot we want, such as a scatterplot, a boxplot, or a bar chart, in `ggplot`, we call the overall type of plot a `geom`. 
+Each `geom` has a function that creates it. 
+
+- `geom_point()` makes scatterplots
+
+- `geom_bar()` makes barplots
+
+- `geom_boxplot()` makes boxplots
+
+Combine these two pieces, the `ggplot()` object and the `geom`, by literally _adding them together_ in an expression, using the `"+"` symbol.
+
+
+
+# Example: diamonds dataset
+
+
+
+Let us explore a dataset called `diamonds` included in the `tidyverse`. (More than 50 thousand records are available)
+
+```{r}
+set.seed(217)
+sample_n(diamonds, 300) 
+```
+
+
+
+# Price vs carat relationship
+
+Ask for Dimensions of Diamonds:
+
+```{r}
+dim(diamonds)
+```
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(aes(x = carat, y = price))
+```
+
+- `ggplot()` – function that creates the basic `ggplot` graph
+
+- `data` - the data frame that you want to use 
+
+- `aes()` – short for _aesthetic_, describes how your variables are graphed
+
+- `geom` – the functions that tell `ggplot` how you want the data presented (scatter plot, histogram, etc.)
+
+
+
+# Recap
+
+
+The graph shows how diamond price changes due to carat.
+
+Let's deconstruct this command:
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(aes(x = carat, y = price), alpha = 0.3)
+```
+
+- `ggplot()` – function that creates the basic `ggplot` graph
+
+- `data` - the data frame that you want to use 
+
+- `aes()` – short for _aesthetic_, describes how your variables are graphed
+
+- `geom` – the functions that tell `ggplot` how you want the data presented (scatter plot, histogram, etc.)
+
+
+# Adding aesthetics
+
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(aes(x = carat, 
+                 y = price,
+                 color = cut))
+```
+
+
+
+> One _common problem_ when creating `ggplot2` graphics is to put the `+` in the _wrong place_: it has to come at the end of the line, _not_ the start.
+
+
+```{r}
+
+```
+
+# Example: gapminder dataset
+
+
+The `gapminder` package includes the `gapminder` dataframe, data on life expectancy, GDP per capita, and population by country.
+
+```{r, message=FALSE, warning = FALSE}
+library(tidyverse)
+library(gapminder)
+```
+
+> Source: http://www.gapminder.org/data/
+
+
+# Quick look
+
+
+Excerpt of the Gapminder data on life expectancy, GDP per capita, and population by country.
+
+
+```{r}
+gapminder  
+```
+
+
+# Mapping aesthetics vs setting them
+
+
+Recall that an _aesthetic mapping_ specifies that a variable will be expressed by one of the available _visual elements_, such as size, or color, or shape, and so on. As we've seen, we map variables to aesthetics like this:
+
+
+
+```{r}
+ggplot(data = gapminder) +
+  geom_point(mapping = aes(x = gdpPercap,
+                           y = lifeExp,
+                           color = continent))
+```
+
+
+
+### Color all points purple?
+
+
+The code before _does not_ give a direct instruction like "color the points purple". Instead it says, "the property `color` will represent the variable `continent`", or "`color` will map `continent`".
+
+If we want to turn all the points in the figure purple, _we do not do it through the mapping function_. Look at what happens when we try:
+
+```{r}
+ggplot(data = gapminder) +
+  geom_point(mapping = aes(x = gdpPercap,
+                           y = lifeExp,
+                           color = "purple"))
+```
+
+
+### What went wrong? 
+
+
+What has happened here? Why is there a legend saying "purple"?
+The `aes()` function is for mappings only 
+
+Do not use it to change properties to a particular value. If we want to _set a property_, we do it in the `geom_` we are using, and outside the `mapping = aes(...)` step.
+
+
+```{r}
+ggplot(data = gapminder) +
+  geom_point(mapping = aes(x = gdpPercap, y = lifeExp), 
+             color = "purple")
+```
+
+HEX is usable
+
+```{r}
+ggplot(data = gapminder) +
+  geom_point(mapping = aes(x = gdpPercap, y = lifeExp), 
+             color = "#532d8e") +
+  labs(x = "GDP per capita",
+       y = "life expectancy",
+       title = "Data from gapminder",
+       subtitle = "Test using Florida Poly purple")
+```
+

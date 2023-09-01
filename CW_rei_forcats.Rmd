@@ -1,0 +1,277 @@
+---
+title: "Factors with `forcats` "
+output: html_notebook
+---
+
+Material adapted from the textbook, _"R for Data Science"_ (R4DS) by Hadley Wickham and Garret Grolemund. The official website of the textbook is <http://r4ds.had.co.nz/>
+
+
+
+Load the required packages 
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+We will use the [package `forcats`](https://forcats.tidyverse.org/) which provides tools for dealing with **cat**egorical variables (and it's an anagram of factors!).
+
+```{r}
+library(forcats)
+```
+
+
+## Factors and Levels
+
+
+Factors are how categorical information gets stored in R. Remember that _categorical variables_ are a type of variable that take on a _name or label_. For example: countries, colors, car makes, a [likert scale](https://en.wikipedia.org/wiki/Likert_scale).
+
+
+Factors often look like _strings_, but behave more like numbers. This is because R is storing each level within a factor as an integer. R assigns integers to each level using alphabetical order.
+
+```{r, echo = FALSE, eval = TRUE}
+# illustration by by: Jesse Maegan
+knitr::include_graphics("https://github.com/reisanar/figs/raw/master/factors_example.png")
+```
+
+
+
+### General Social Survey
+
+A sample of categorical variables from the General Social survey is included in the `gss_cat` data frame included in `forcats`
+
+```{r}
+gss_cat
+```
+
+
+Notice: 
+
+- `marital` is a **factor** within our dataset
+
+- "Never married", "Divorced", and "Married" are all **levels** of the factor `marital`
+
+If we use the `str()` function we can easily see the different levels of all the factors in our dataset
+
+```{r}
+str(gss_cat)
+```
+
+Notice that there are 6 factors in our dataset: 
+
+factor      | description                 | levels
+------------|-----------------------------|--------------
+`marital`   | marital status              | 6
+`race`      | race                        | 4      
+`rincome`   | reported income             | 16
+`partyid`   | party affiliation           | 10
+`relig`     | religion                    | 16
+`denom`     | denomination                | 30
+
+
+We can also use the `count()` function:
+
+```{r}
+gss_cat %>%
+  count(race)
+```
+
+We can see this also by creating a bar plot:
+
+```{r}
+ggplot(gss_cat, aes(race)) +
+  geom_bar()
+```
+
+
+## Modifying factor order
+
+It is often useful to change the _order_ of the factor levels in a visualization. For example, imagine you want to explore the average number of hours spent watching TV per day across religions:
+
+First create an object containing the summaries
+
+```{r}
+relig_summary <- gss_cat %>%
+                  group_by(relig) %>%
+                  summarise(
+                            age = mean(age, na.rm = TRUE),
+                            tvhours = mean(tvhours, na.rm = TRUE),
+                            n = n()
+                  )
+```
+
+and then use `ggplot` to create a visualization:
+
+```{r}
+ggplot(relig_summary, aes(tvhours, relig)) + 
+  geom_point()
+```
+
+
+In this plot because there is no overall pattern. We can improve it by _reordering the levels_ of `relig` using `fct_reorder()`. 
+
+`fct_reorder()` takes three arguments:
+
+- `f`, the factor whose levels you want to modify.
+
+- `x`, a numeric vector that you want to use to reorder the levels.
+
+- Optionally, `fun`, a function that's used if there are multiple values of `x` for each value of `f`. The default value is `median`.
+
+```{r}
+ggplot(relig_summary, aes(tvhours, fct_reorder(relig, tvhours))) +
+  geom_point()
+```
+
+What if we create a similar plot looking at how _average age_ varies across reported income level?
+
+
+```{r}
+rincome_summary <- gss_cat %>%
+  group_by(rincome) %>%
+  summarise(
+    age = mean(age, na.rm = TRUE),
+    tvhours = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+  
+ggplot(rincome_summary, aes(age, fct_reorder(rincome, age))) +
+  geom_point()
+  
+```
+
+Here, arbitrarily reordering the levels is not a good idea! That's because `rincome` already has a _principled order_ that we should not mess with. _Reserve `fct_reorder()` for factors whose levels are arbitrarily ordered._
+
+However, it does make sense to pull "Not applicable" to the front with the other special levels. You can use `fct_relevel()`. It takes a factor, `f`, and then any number of levels that you want to move to the front of the line.
+
+```{r}
+ggplot(rincome_summary, aes(age, fct_relevel(rincome, "Not applicable"))) +
+  geom_point()
+```
+
+
+
+## Modifying factor levels
+
+More powerful than changing the orders of the levels is changing their values. This allows you to clarify labels for publication, and collapse levels for high-level displays. The most general and powerful tool is `fct_recode()`. It allows you to recode, or change, the value of each level. 
+
+For example, take the `gss_cat$partyid`:
+
+```{r}
+gss_cat %>% 
+  count(partyid)
+
+```
+
+The levels are terse and inconsistent. 
+
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+    "Republican, strong"    = "Strong republican",
+    "Republican, weak"      = "Not str republican",
+    "Independent, near rep" = "Ind,near rep",
+    "Independent, near dem" = "Ind,near dem",
+    "Democrat, weak"        = "Not str democrat",
+    "Democrat, strong"      = "Strong democrat"
+  )) %>%
+  count(partyid)
+```
+
+`fct_recode()` will leave levels that are not explicitly mentioned as is, and will warn you if you accidentally refer to a level that does not exist.
+
+To combine groups, you can assign multiple old levels to the same new level:
+
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+    "Republican, strong"    = "Strong republican",
+    "Republican, weak"      = "Not str republican",
+    "Independent, near rep" = "Ind,near rep",
+    "Independent, near dem" = "Ind,near dem",
+    "Democrat, weak"        = "Not str democrat",
+    "Democrat, strong"      = "Strong democrat",
+    "Other"                 = "No answer",
+    "Other"                 = "Don't know",
+    "Other"                 = "Other party"
+  )) %>%
+  count(partyid)
+```
+
+
+
+## Other Examples
+
+Consider the `airquality` dataset that contains daily air quality measurements in New York, May to September 1973.
+
+
+```{r}
+glimpse(airquality)
+```
+
+Let us convert the variable `Month` to a factor
+
+```{r}
+airquality$Month <- factor(airquality$Month)
+airquality$Month
+
+```
+
+and we can also rename the months using the `fct_recode()` function:
+
+```{r}
+airquality$Month <- fct_recode(airquality$Month, May = '5', June = '6', July = '7', Aug = '8', Sept = '9')
+glimpse(airquality$Month)
+
+```
+
+
+We can see the distribution of `Temperature` in the different months
+
+```{r}
+ggplot(airquality, aes(Month, Temp)) +
+  geom_boxplot(aes(fill = Month)) +
+  ggtitle(label = "Daily Temperatures Aggregated by Month")
+
+```
+
+
+
+Sometimes it is useful to _reorder_ the factor in a way that is useful for visualization. For this, we can use the `fct_reorder()` function.
+
+For example, let us use the `mtcars` data set:
+
+```{r}
+
+
+```
+
+First, make the variable `model` a factor:
+
+```{r}
+
+
+```
+
+and create a scatterplot to see the `mpg` per `model`
+
+```{r}
+
+
+```
+
+It is difficult to make comparisons when the data is scattered. But we can use the `fct_reorder()` function to clean it up.
+
+
+```{r}
+
+ 
+```
+
+
+We can even use `geom_segment()` to create what is sometimes called a _lollipop chart_
+
+```{r}
+
+
+```
+

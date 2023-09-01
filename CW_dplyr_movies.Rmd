@@ -1,0 +1,175 @@
+---
+title: "Exploring Hollywood Movies with `dplyr`"
+output: html_notebook
+---
+
+
+## Load packages
+
+We will be using the set of tools for data transformation from the `dplyr` packages, part of the `tidyverse`. Load the `tidyverse` by executing the command below
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+
+## Example: Hollywood Movies
+
+Read data on Hollywood Movies
+
+```{r}
+mov_url <- "https://raw.githubusercontent.com/reisanar/datasets/master/HollywoodMovies.csv"
+Hollywood <- read_csv(mov_url)
+```
+
+Learn more about the dataset by using the function `glimpse()`
+
+```{r}
+glimpse(Hollywood)
+```
+
+
+Print the first rows of the dataset 
+
+```{r}
+head(Hollywood, 10)
+```
+
+
+## `filter()`
+
+
+- Filter all Universal movies
+
+```{r}
+filter(Hollywood, LeadStudio == "Universal")
+```
+
+
+- Get only action movies by Universal 
+
+```{r}
+filter(Hollywood, LeadStudio == "Universal", Genre == "Action")
+```
+
+- Get movies by Disney and store them in an object called `disney_movies`
+
+```{r}
+disney_movies <- Hollywood %>%
+  filter(LeadStudio == "Disney")
+  
+```
+
+```{r}
+disney_movies
+```
+
+
+- What Disney movies are from 2010?
+
+```{r}
+disney_2010 <- disney_movies %>%
+  filter(Year == "2010")
+disney_2010
+```
+
+
+- Find Disney movies that had `Profitability` larger than 1500
+
+```{r}
+disney_movies %>%
+  filter(Profitability > 1500)
+```
+
+
+## `mutate()`
+
+Create a new variable called `Score` that is the average score of `RottenTomatoes` and `AudienceScore`
+
+```{r}
+mutate(Hollywood, Score = (RottenTomatoes + AudienceScore) / 2)
+```
+
+
+## `select()`
+
+Create a new data frame that only contains columns: `Movie`, `Studio`, `Genre`, `Budget`, `Profitability`, and `Year`
+
+```{r}
+my_movies <- select(Hollywood, Movie, LeadStudio, Genre, Budget, Profitability, Year)
+# print the new data frame
+my_movies
+```
+
+
+## `arrange()`
+
+Sort your new data frame based on the `Budget` variable
+
+```{r}
+my_movies %>%
+  arrange(-Budget)
+```
+
+
+## `summarise()`
+
+Get a summary of the average Budget for the movies in the `Hollywood` dataset
+
+```{r}
+summarise(Hollywood,
+          ave_budget = mean(Budget, na.rm = TRUE))
+```
+
+Find the movie with the maximum budget:
+
+```{r}
+filter(Hollywood, Budget == max(Budget, na.rm = TRUE))
+```
+
+Find the movie with the minimum budget:
+
+```{r}
+filter(Hollywood, Budget == min(Budget, na.rm = TRUE))
+```
+
+Notice that in this dataset the movie "Soul Men" has a reported value of 0 for `Budget`. This might be due an error when collecting the records, or a (wrong) decision of assigning the value of 0 for a movie for which there was no record of budget (`NA` should have been the right choice in such case)
+
+
+## `group_by()`
+
+
+Create a summary of the average budget for movies per studio. Notice that we should use the pipe operator `%>%` for this task
+
+```{r}
+Hollywood %>%
+  group_by(LeadStudio) %>%
+  summarise(AveBudget = mean(Budget, na.rm = TRUE))
+
+```
+
+Arrange the results from the previous step in descending order
+
+```{r}
+Hollywood %>%
+  group_by(LeadStudio) %>%
+  summarise(AveBudget = mean(Budget, na.rm = TRUE)) %>%
+  arrange(-AveBudget)
+
+```
+
+
+## `rename()`
+
+The function `rename()` works in the following way:
+
+`rename(df, new_name = old_name)`
+
+- Rename the variable `LeadStudio` for `Studio`
+
+```{r}
+rename(Hollywood, Studio = LeadStudio)
+```
+
+
+

@@ -1,0 +1,85 @@
+---
+title: "Blood Pressure and Steps - First Exploration"
+output: html_notebook
+---
+
+## Load packages and read the data
+
+Load the `tidyverse` package for data exploration
+
+```{r}
+library(tidyverse)
+```
+
+
+Read the data: 
+
+```{r}
+bp_steps <- read_csv("https://raw.githubusercontent.com/reisanar/datasets/master/bp_and_steps.csv")
+```
+Notice the _type_ of some of the columns in this dataframe. 
+
+
+## Initial Exploration
+
+
+Take a look at the dataset by printing the dataframe:
+
+```{r}
+bp_steps
+```
+
+- What initial questions can we formulate about this data? 
+
+# Blood Pressure
+
+1. Heart rate vs blood pressure? 
+
+2. Relation of heart rate/bp vs time? 
+
+
+
+Filter by vital categories
+
+- How can we answer such questions?
+
+1. ggplot via scatterplot "geom_point"
+
+2. 
+
+- Do all values make sense? Do you notice any _outliers_? 
+
+```{r}
+#heart rate vs blood pressure
+bp_steps %>%
+  filter(Vital == "Blood Pressure") %>%
+
+ggplot() +
+  geom_point(aes(x = HeartRate, y = BP_Sys), na.rm = TRUE)
+```
+
+
+
+## Data Dictionary
+
+
+| Field Name  | Field Definition                                    |
+| ------------|-----------------------------------------------------|
+| `Vital`     | One of two: Blood Pressure, Steps                   |
+| `Value`     | The collected value of the `Vital` column           |
+| `HeartRate` | Average heart rate within a fifteen minute interval |
+| `DateSplit` | The date the data is collected                      |                                             
+| `TimeSplit` | The time the data is collected                      |                                             
+| `BP_Sys`    | Systolic blood pressure reading                     |
+| `BP_Dia`    | Diastolic blood pressure reading                    |
+
+
+
+_Some notes:_
+
+- Normal heart rate range for an adult is between 60-100 beats per minute. During strenuous exercise, it is normal for this to increase up to 170 beats per minute for individuals over 18. 
+
+- Systolic blood pressure reading is an average over a fifteen minute time interval.  
+
+- Diastolic blood pressure reading as an average over a fifteen minute time interval.    
+

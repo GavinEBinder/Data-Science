@@ -1,0 +1,449 @@
+---
+title: "Working with Dates and Times"
+output: html_notebook
+---
+
+Material adapted from _"R for Data Science"_ (R4DS) by Hadley Wickham and Garret Grolemund. The official website of the textbook is <http://r4ds.had.co.nz/>
+
+Load the required packages 
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+
+
+## Introduction
+
+- Does every year have 365 days?
+
+- Does every day have 24 hours?
+
+- Does every minute have 60 seconds?
+
+Do you know the full rule for determining if a year is a leap year? (It has three parts.) You might have remembered that many parts of the world use daylight savings time (DST), so that some days have 23 hours, and others have 25. You might not have known that some minutes have 61 seconds because every now and then leap seconds are added because the Earth's rotation is gradually slowing down.
+
+We will focus on the `lubridate` package, which makes it easier to work with dates and times in R. `lubridate` is not part of core `tidyverse` because you only need it when you're working with dates/times. We will also need `nycflights13` for practice data.
+
+```{r, message=FALSE}
+library(lubridate)
+library(nycflights13)
+```
+
+
+## Creating date/times
+
+There are three types of date/time data that refer to an instant in time:
+
+- A **date**. Tibbles print this as `<date>`.
+
+- A **time** within a day. Tibbles print this as `<time>`.
+
+- A **date-time** is a date plus a time: it uniquely identifies an instant in time (typically to the nearest second). Tibbles print this as `<dttm>`. Elsewhere in R these are called `POSIXct`.
+
+
+To get the current date or date-time you can use `today()` or `now()`:
+
+```{r}
+today()
+```
+```{r}
+now()
+```
+
+
+
+### From strings
+
+Date/time data often comes as _strings_. Using the helpers provided by `lubridate`, we can automatically work out the format once we specify the order of the component. 
+
+To use them, identify the order in which year, month, and day appear in your dates, then arrange "y", "m", and "d" in the same order. That gives you the name of the `lubridate` function that will parse your date. For example
+
+```{r}
+ymd("2021-7-27")
+```
+```{r}
+mdy("December 31st, 2021")
+```
+```{r}
+dmy("31-Oct-2021")
+```
+
+
+```{r}
+mdy("7-27-2021")
+```
+
+```{r}
+dmy("27-7-2021")
+```
+
+Notice that you can also use these functions with unquoted numbers
+
+```{r}
+ymd(20210727)
+```
+
+`ymd()` and friends create dates. To create a date-time, add an underscore and one or more of "h", "m", and "s" to the name of the parsing function:
+
+```{r}
+ymd_hms("2021-7-27 15:23:00")
+```
+
+```{r}
+ymd("2021-07-27", tz = "EST")
+```
+
+Coordinated Universal Time abbreviated to UTC, is the primary time standard by which the world regulates clocks and time. It is within about 1 second of mean solar time at 0 longitude, and it does not observe daylight saving time.
+
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/World_Time_Zones_Map.png/1599px-World_Time_Zones_Map.png)
+
+
+You can also force the creation of a date-time from a date by supplying a timezone:
+
+```{r}
+
+```
+
+
+
+
+
+
+### From individual components
+
+
+Instead of a single string, sometimes you will have the individual components of the date-time spread across multiple columns. This is what we have in the `flights` data:
+
+```{r}
+flights %>%
+  filter(month == 2, day == 17)
+```
+
+To create a date/time from this sort of input, use `make_date()` for dates, or `make_datetime()` for date-times:
+
+```{r}
+flights %>%
+  select(year, month, day, hour, minute) %>%
+  mutate(
+    departure = make_datetime(year, month, day, hour, minute)
+  )
+
+```
+
+
+We can do the same thing for each of the _four time columns_ in `flights`. The times are represented in a slightly odd format, so we use _modulus arithmetic_ to pull out the hour and minute components. 
+
+
+A familiar use of modular arithmetic is in the 12-hour clock, in which the day is divided into two 12-hour periods. If the time is 7:00 now, then 8 hours later it will be 3:00. Usual addition would suggest that the later time should be 7 + 8 = 15, but this is not the answer because clock time _"wraps around"_ every 12 hours. This computation can be done following "arithmetic modulo 12": the operator in R to do this is `%%` to find the value of $15 \mod 12$, that is, the remainder of dividing 15 by 12
+
+```{r}
+15 %% 12
+```
+
+
+
+In the `flights` data set, the variables `dep_time`, `arr_time`, `sched_dep_time`, and `sched_arr_time` are actually given in _military time_, i.e. a 24-hour clock where 1300 refers to 1 pm, and 2359 refers to 11:59 pm
+
+> `%%` indicates $(x \mod y)$ and `%/%` indicates integer division. It is guaranteed that `x == (x %% y) + y * ( x %/% y )` (up to rounding error) 
+
+First, let us create a function called `make_datetime_100`
+
+```{r}
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+```
+
+Now we use this function to create a new data frame with date-time values in the four different variables we are interested in 
+
+```{r}
+flights_dt <- flights %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  ) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+```
+
+Double check our new data frame
+
+```{r}
+flights_dt
+```
+
+With this data, we can visualize the distribution of departure times within a day:
+
+```{r}
+flights_dt %>%
+  filter(dep_time < ymd(20130102)) %>%
+  ggplot(aes(x = dep_time)) +
+  geom_freqpoly(binwidth = 600)
+
+```
+
+or with a histogram
+
+```{r}
+flights_dt %>%
+  filter(dep_time < ymd(20130102)) %>%
+  ggplot(aes(x = dep_time)) +
+  geom_histogram(binwidth = 600)
+
+```
+
+Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+
+
+###  From other types
+
+You may want to switch between a date-time and a date. That's the job of `as_datetime()` and `as_date()`:
+
+```{r}
+
+```
+
+```{r}
+\
+```
+
+
+
+## Practice
+
+Use the appropriate `lubridate` function to parse each of the following dates:
+
+```{r}
+d1 <- "January 1, 2010"
+d2 <- "2015-Mar-07"
+d3 <- "06-Jun-2017"
+d4 <- c("August 19 (2015)", "July 1 (2015)")
+d5 <- "12/30/14" # Dec 30, 2014
+```
+
+
+A solution is given below
+
+```{r}
+mdy(d1)
+ymd(d2)
+dmy(d3)
+```
+```{r}
+mdy(d4)
+mdy(d5)
+```
+
+
+
+## Date-time components
+
+You can pull out individual parts of the date with the _accessor_ functions `year()`, `month()`, `mday()` (day of the month), `yday()` (day of the year), `wday()` (day of the week), `hour()`, `minute()`, and `second()`.
+
+```{r}
+# day of the month
+mday(ymd("2021-01-31"))
+# day of the week
+wday(ymd("2021-01-31"))
+wday(ymd("2021-01-31"), label = TRUE)
+# day of the year
+yday(ymd("2021-01-31"))
+```
+
+In `yday()`, 1 means Sunday, 7 means Saturday.
+
+Consider for instance July 7th 1969 at 8:18 pm
+
+```{r}
+mydatetime <- ymd_hms("1969-07-20 08:18:04pm", tz = "UTC")
+```
+
+we can access the different components of this date-time as follows:
+
+```{r}
+year(mydatetime)
+month(mydatetime, label = TRUE)
+mday(mydatetime)
+yday(mydatetime)
+wday(mydatetime, label = TRUE)
+```
+
+
+![](http://media.giphy.com/media/5XlqQ4Lc5c532/giphy.gif)
+
+
+
+We can use `wday()` to see that more flights depart during the week than on the weekend:
+
+```{r}
+flights_dt %>%
+  mutate(wday = wday(dep_time, label = 1)) %>%
+  ggplot() +
+  geom_bar(aes(x = wday))
+
+```
+
+
+There is an interesting pattern if we look at the _average departure delay_ by minute within the hour. It looks like flights leaving in minutes 20-30 and 50-60 have much lower delays than the rest of the hour!
+
+```{r}
+flights_dt %>% 
+  mutate(minute = minute(dep_time)) %>% 
+  group_by(minute) %>% 
+  summarise(avg_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = minute, y = avg_delay)) + 
+  geom_line()
+
+```
+
+
+
+## Time Spans
+
+We discuss three important classes that represent time spans:
+
+- **durations**, which represent an exact number of seconds.
+
+- **periods**, which represent human units like weeks and months.
+
+- **intervals**, which represent a starting and ending point.
+
+### Durations
+
+In R, when you subtract two dates, you get a `difftime` object:
+
+
+```{r}
+# How old is your friend?
+rei_age <- today() - ymd(19860217)
+rei_age
+
+```
+
+```{r}
+class(rei_age)
+```
+
+Durations come with a bunch of convenient constructors:
+
+```{r}
+as.duration(rei_age)
+```
+
+```{r}
+dseconds(15)
+```
+
+```{r}
+dhours(c(12, 24))
+```
+
+You can add and multiply durations:
+
+```{r}
+dyears(1) + dweeks(12) + dhours(15)
+```
+
+Some arithmetic:
+
+```{r}
+one_pm <- ymd_hms("2016-03-12 13:00:00", tz = "America/New_York")
+
+one_pm
+#> [1] "2016-03-12 13:00:00 EST"
+one_pm + ddays(1)
+```
+
+_Why is one day after 1pm on March 12, 2pm on March 13?!_ 
+
+If you look carefully at the date you might also notice that the time zones have changed. Because of DST, March 12 only has 23 hours, so if you add a full days worth of seconds we end up with a different time.
+
+To solve this problem, `lubridate` provides **periods**. 
+
+### Periods 
+
+These are time spans but do not have a fixed length in seconds, instead they work with "human" times, like days and months. That allows them work in a more intuitive way:
+
+```{r}
+one_pm + days(1)
+```
+
+You can add and multiply periods:
+
+
+```{r}
+
+
+```
+
+
+Compared to durations, periods are more likely to do what you expect:
+
+```{r}
+# A leap year
+
+```
+
+```{r}
+# Daylight Savings Time
+
+```
+
+Let us use periods to fix an oddity related to our flight dates: Some planes appear to have arrived at their destination _before_ they departed from New York City.
+
+```{r}
+flights_dt %>%
+  filter(arr_time < dep_time)
+ 
+```
+
+These are _overnight flights_. We used the same date information for both the departure and the arrival times, but these flights arrived on the following day. We can fix this by adding `days(1)` to the arrival time of each overnight flight.
+
+```{r}
+flights_dt <- flights_dt %>%
+  mutate(
+    overnight = arr_time < dep_time,
+    arr_time = arr_time + days(overnight * 1),
+    sched_arr_time = sched_arr_time + days(overnight * 1)
+  )
+
+```
+
+
+`overnight` is equal to `TRUE` (1) or `FALSE` (0). So if it is an overnight flight, this becomes 1 day, and if not, then `overnight = 0`, and no days are added to the date.
+
+Now all of our flights obey the laws of physics.
+
+```{r}
+flights_dt %>%
+  filter(overnight, arr_time < dep_time)
+```
+
+
+## Time zones
+
+R uses the international standard [IANA time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+
+These use a consistent naming scheme "/", typically in the form "<continent>/<city>". Examples include "America/New_York", "Europe/Paris", and "Pacific/Auckland".
+
+You can find out what R thinks your current time zone is with `Sys.timezone()`:
+
+```{r}
+Sys.timezone()
+```
+
+Unless other specified, `lubridate` always uses UTC. UTC (Coordinated Universal Time) is the standard time zone used by the scientific community and roughly equivalent to its predecessor GMT (Greenwich Mean Time). It does not have DST, which makes a convenient representation for computation. 
+
+
+![](https://github.com/tidyverse/lubridate/raw/master/man/figures/logo.png)
+
+
+
+
+
+

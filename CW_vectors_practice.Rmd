@@ -1,0 +1,140 @@
+---
+title: "Working with Vectors"
+output: html_notebook
+---
+
+# Creating and Operating on Vectors
+
+Create a vector `names` that contains your name and the names of 2 people 
+next to you. Print the vector.
+
+```{r}
+
+names <- c("Gavin","Zachary","Patrick")
+```
+
+
+Use the colon operator `:` to create a vector `n` of numbers from 10 to 49
+
+```{r}
+n <- 10:49
+```
+
+Use the `length()` function to get the number of elements in `n`
+
+```{r}
+length(n)
+```
+
+Add 1 to each element in `n` and print the result
+
+```{r}
+print(n+1)
+```
+
+Create a vector `m` that contains the numbers 10 to 1 (in that order). Hint: use the `seq()` function
+
+```{r}
+m <- seq(10, 1)
+```
+
+
+Subtract `m` from `n`. Note the recycling!
+
+```{r}
+n_less_m <- n - m
+print(n_less_m)
+```
+
+
+Use the `seq()` function to produce a range of numbers from -5 to 10 in `0.1` increments. Store it in a variable `x_range`
+
+```{r}
+x_range <- seq(-5,10, by = 0.1)
+```
+
+
+Create a vector `sin_wave` by calling the `sin()` function on each element in `x_range`.
+
+```{r}
+sin_wave <- sin(x_range)
+```
+
+
+Create a vector `cos_wave` by calling the `cos()` function on each element 
+in `x_range`.
+
+```{r}
+cos_wave <- cos(x_range)
+```
+
+
+Create a vector `wave` by multiplying `sin_wave` and `cos_wave` together, then
+adding `sin_wave` to the product
+
+```{r}
+wave <- (sin_wave * cos_wave) + sin_wave
+```
+
+
+Use the `plot()` function to plot your `wave`!
+
+```{r}
+plot(wave, type = "l")
+```
+
+
+
+
+
+# Indexing and Filtering Vectors
+
+
+Create a vector `lotto_numbers` that contains the numbers 8, 26, 7, 20, 9, 0, 10
+
+```{r}
+lotto_numbers <- c(8, 26, 7, 20, 9, 0, 10)
+```
+
+
+Create a vector `prefix` that has the first three elements of `lotto_numbers`
+
+```{r}
+prefix <- lotto_numbers[1:3]
+prefix
+```
+
+Create a vector `small` that has the values of `lotto_numbers` that are less than or equal to 10
+
+
+```{r}
+small <- lotto_numbers[lotto_numbers <= 10]
+small
+```
+
+
+Create a vector `large` that has the values of `lotto_numbers` that are strictly greater than 10
+
+```{r}
+large <- lotto_numbers[lotto_numbers > 10]
+large
+```
+
+
+Replace the values in `lotto_numbers` that are larger than 5 with the number 100
+
+```{r}
+lotto_numbers[lotto_numbers > 5] <- 100
+lotto_numbers
+
+```
+
+Replace every odd-numbered value in `lotto_numbers` with the number 0
+
+```{r}
+lotto_numbers[lotto_numbers %% 2 == 1] <- 0
+print(lotto_numbers)
+```
+
+
+
